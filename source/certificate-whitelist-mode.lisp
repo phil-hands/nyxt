@@ -29,12 +29,12 @@ See the `add-domain-to-certificate-whitelist' command."
       (setf (certificate-whitelist (buffer mode)) (certificate-whitelist mode))))))
 
 (defun previous-history-urls-suggestion-filter (&optional (mode (find-submode
-                                                            (current-buffer)
-                                                            'web-mode)))
+                                                                 (current-buffer)
+                                                                 'web-mode)))
   "Suggestion function over all parent URLs."
   (let ((parents (htree:parent-nodes (history mode))))
     (push (htree:current (history mode)) parents)
-    (setf parents (remove-if #'str:emptyp parents :key (alex:compose  #'url #'htree:data)))
+    (setf parents (remove-if #'url-empty-p parents :key (alex:compose #'url #'htree:data)))
     (lambda (minibuffer)
       (if parents
           (fuzzy-match (input-buffer minibuffer) parents)
