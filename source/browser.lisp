@@ -680,6 +680,9 @@ Deal with REQUEST-DATA with the following rules:
                                 (keymap:lookup-key keys keymap))))
       (declare (type quri:uri url))
       (cond
+        ((eq (class-of buffer) (find-class 'internal-buffer))
+         (log:debug "Interal buffer function request: ~a" url)
+         nil)
         (bound-function
          (log:debug "Resource request key sequence ~a" (keyspecs-with-optional-keycode keys))
          (funcall-safely bound-function :url url)
