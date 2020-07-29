@@ -41,23 +41,9 @@
        :initform ""
        :documentation "Unique identifier for a buffer.
 Dead buffers or placeholder buffers (i.e. those not associated with a web view)
-have an empty ID.")
-   ;; TODO: Or maybe a dead-buffer should just be a buffer history?
-   (url :accessor url :initarg :url :type quri:uri :initform (quri:uri ""))
+have an empty ID.") ;; TODO: Or maybe a dead-buffer should just be a buffer history?
    (url-at-point :accessor url-at-point :type quri:uri :initform (quri:uri ""))
    (title :accessor title :initarg :title :type string :initform "")
-   (load-status ;; :accessor load-status ; TODO: Need to decide if we want progress / errors before exposing to the user.
-                :initarg :load-status
-                :type (or (eql :loading)
-                          (eql :finished)
-                          (eql :unloaded))
-                :initform :unloaded
-                :documentation "The status of the buffer.
-- `:loading' when loading a web resource.
-- `:finished' when done loading a web resource.
-- `:unloaded' for buffers that have not been loaded yet, like
-  session-restored buffers, dead buffers or new buffers that haven't started the
-  loading process yet..")
    (last-access :accessor last-access
                 :initform (local-time:now)
                 :type local-time:timestamp
@@ -166,9 +152,6 @@ Example:
     (reduce #'hooks:add-hook
             (mapcar #'make-handler-resource (list #'old-reddit-handler #'auto-proxy-handler))
             :initial-value %slot-default))))")
-   (default-new-buffer-url :accessor default-new-buffer-url
-                           :initform (quri:uri "https://nyxt.atlas.engineer/start")
-                           :documentation "The URL set to a new blank buffer opened by Nyxt.")
    (scroll-distance :accessor scroll-distance :initform 50 :type number
                     :documentation "The distance scroll-down or scroll-up will scroll.")
    (horizontal-scroll-distance :accessor horizontal-scroll-distance :initform 50 :type number
@@ -190,10 +173,6 @@ distance scroll-left or scroll-right will scroll.")
                       :documentation "The ratio of the page to scroll.
 A value of 0.95 means that the bottom 5% will be the top 5% when scrolling
 down.")
-   (cookies-path :accessor cookies-path
-                 :initform (make-instance 'cookies-data-path :basename "cookies.txt")
-                 :documentation "The path where cookies are stored.  Not all
-renderers might support this.")
    (box-style :accessor box-style
               :initform (cl-css:css
                          '((".nyxt-hint"
@@ -209,15 +188,7 @@ renderers might support this.")
                                      '((".nyxt-hint.nyxt-highlight-hint"
                                         :font-weight "500"
                                         :background "#fcff9e")))
-
                           :documentation "The style of highlighted boxes, e.g. link hints.")
-   (proxy :initform nil
-          :type (or proxy null)
-          :documentation "Proxy for buffer.")
-   (certificate-whitelist :accessor certificate-whitelist
-                          :initform '()
-                          :type list-of-strings
-                          :documentation  "A list of hostnames for which certificate errors shall be ignored.")
    (buffer-load-hook ;; :accessor buffer-load-hook ; TODO: Export?  Maybe not since `request-resource-hook' mostly supersedes it.
                  :initform (make-hook-uri->uri
                             :combination #'hooks:combine-composed-hook)
@@ -229,19 +200,46 @@ and must return a (possibly new) URL.")
                        :initform (make-hook-buffer)
                        :type hook-buffer
                        :documentation "Hook run before `buffer-delete' takes effect.
-The handlers take the buffer as argument.")
+The handlers take the buffer as argument.")))
+
+(defclass internal-buffer (buffer) ()
+  (:documentation "A buffer with the ability to run lisp:// codified URLs."))
+
+(defclass internet-buffer (buffer)
+  ((url :accessor url :initarg :url :type quri:uri :initform (quri:uri ""))
+   (load-status ;; :accessor load-status ; TODO: Need to decide if we want progress / errors before exposing to the user.
+                :initarg :load-status
+                :type (or (eql :loading)
+                          (eql :finished)
+                          (eql :unloaded))
+                :initform :unloaded
+                :documentation "The status of the buffer.
+- `:loading' when loading a web resource.
+- `:finished' when done loading a web resource.
+- `:unloaded' for buffers that have not been loaded yet, like
+  session-restored buffers, dead buffers or new buffers that haven't started the
+  loading process yet..")
+   (default-new-buffer-url :accessor default-new-buffer-url
+                           :initform (quri:uri "https://nyxt.atlas.engineer/start")
+                           :documentation "The URL set to a new blank buffer opened by Nyxt.")
+   (cookies-path :accessor cookies-path
+                :initform (make-instance 'cookies-data-path :basename "cookies.txt")
+                :documentation "The path where cookies are stored.  Not all
+renderers might support this.")
+   (proxy :initform nil
+          :type (or proxy null)
+          :documentation "Proxy for buffer.")
+   (certificate-whitelist :accessor certificate-whitelist
+                          :initform '()
+                          :type list-of-strings
+                          :documentation  "A list of hostnames for which certificate errors shall be ignored.")
    (default-cookie-policy :accessor default-cookie-policy
                           :initarg :default-cookie-policy
                           :type cookie-policy
                           :initform :no-third-party
                           :documentation "Cookie policy of new buffers.
 Must be one of `:always' (accept all cookies), `:never' (reject all cookies),
-`:no-third-party' (accept cookies for current website only).")))
-
-(defclass internal-buffer (buffer) ()
-  (:documentation "A buffer with the ability to run lisp:// codified URLs."))
-
-(defclass internet-buffer (buffer) ()
+`:no-third-party' (accept cookies for current website only)."))
   (:documentation "A buffer with the ability to navigate the broader internet."))
 
 (defmethod proxy ((buffer buffer))
