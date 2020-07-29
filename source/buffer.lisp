@@ -238,6 +238,9 @@ The handlers take the buffer as argument.")
 Must be one of `:always' (accept all cookies), `:never' (reject all cookies),
 `:no-third-party' (accept cookies for current website only).")))
 
+(defclass internal-buffer (buffer) ()
+  (:documentation "A buffer with the ability to run lisp:// codified URLs."))
+
 (defmethod proxy ((buffer buffer))
   (slot-value buffer 'proxy))
 
