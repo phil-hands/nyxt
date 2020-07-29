@@ -380,13 +380,17 @@ If URL is `:default', use `default-new-buffer-url'."
       (buffer-load url :buffer buffer))
     buffer))
 
+(defun make-internal-buffer (&key (title "") modes)
+  (buffer-make *browser* :title title :default-modes modes
+                         :buffer-class 'internal-buffer))
+
 (define-class-type buffer)
 (declaim (type (buffer-type) *buffer-class*))
 (export-always '*buffer-class*)
 (defvar *buffer-class* 'buffer)
 
-(declaim (ftype (function (browser &key (:title string) (:default-modes list) (:dead-buffer buffer))) buffer-make))
-(defun buffer-make (browser &key title default-modes dead-buffer)
+(declaim (ftype (function (browser &key (:title string) (:default-modes list) (:dead-buffer buffer) (:buffer-class symbol))) buffer-make))
+(defun buffer-make (browser &key title default-modes dead-buffer (buffer-class *buffer-class*))
   "Make buffer with title TITLE and modes DEFAULT-MODES.
 Run `*browser*'s `buffer-make-hook' over the created buffer before returning it.
 If DEAD-BUFFER is a dead buffer, recreate its web view and give it a new ID."
@@ -395,7 +399,7 @@ If DEAD-BUFFER is a dead buffer, recreate its web view and give it a new ID."
                        ;; Dead buffer ID must be renewed before calling `ffi-buffer-make'.
                        (setf (id dead-buffer) (get-unique-buffer-identifier *browser*))
                        (ffi-buffer-make dead-buffer))
-                     (apply #'make-instance *buffer-class*
+                     (apply #'make-instance buffer-class
                             :id (get-unique-buffer-identifier *browser*)
                             (append (when title `(:title ,title))
                                     (when default-modes `(:default-modes ,default-modes)))))))
